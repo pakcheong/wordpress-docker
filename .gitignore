@@ -1,0 +1,9 @@
+# Ignore WordPress & MySQL data
+volumes/
+
+# Optional: ignore system junk
+.DS_Store
+Thumbs.db
+
+# Optional: ignore logs
+*.log

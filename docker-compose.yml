@@ -1,0 +1,75 @@
+services:
+  wordpress:
+    image: wordpress:latest
+    container_name: ${WORDPRESS_CONTAINER_NAME:-wordpress-latest}
+    restart: unless-stopped
+    ports:
+      - "${WORDPRESS_PORT:-8080}:80"
+    environment:
+      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST:-db:3306}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER:-wp_user}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD:-wp_pass}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME:-wordpress}
+      # 可选：直接在 wp-config.php 写入额外常量（无需手改文件）
+      WORDPRESS_CONFIG_EXTRA: |
+        define('FS_METHOD','direct');
+        define('WP_MEMORY_LIMIT','256M');
+        define('WP_MAX_MEMORY_LIMIT','256M');
+        define('WP_DEBUG', false);
+    volumes:
+      - ${WORDPRESS_DATA_PATH:-./volumes/wordpress}:/var/www/html
+      - ./mount/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
+      - ./mount/activationkey.php:/var/www/html/activationkey.php
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.4
+    container_name: ${DB_CONTAINER_NAME:-mysql}
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: ${WORDPRESS_DB_NAME:-wordpress}
+      MYSQL_USER: ${WORDPRESS_DB_USER:-wp_user}
+      MYSQL_PASSWORD: ${WORDPRESS_DB_PASSWORD:-wp_pass}
+    volumes:
+      - ${DB_DATA_PATH:-./volumes/database}:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+
+  wpcli:
+    image: wordpress:cli
+    container_name: wpcli-onetime
+    depends_on:
+      - db
+      - wordpress
+    user: "0:0"
+    environment:
+      WP_CLI_ALLOW_ROOT: "1"
+      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST:-db:3306}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER:-wp_user}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD:-wp_pass}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME:-wordpress}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+
+      SITE_URL: ${SITE_URL:-http://localhost:8080}
+      SITE_TITLE: ${SITE_TITLE:-My Awesome Site}
+      WP_ADMIN_USER: ${WP_ADMIN_USER:-admin}
+      WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD:-changeme123}
+      WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL:-admin@example.com}
+
+      WP_PLUGINS: ${WP_PLUGINS:-}
+      WP_LOCALE: ${WP_LOCALE:-zh_CN}
+      WP_PERMALINK: ${WP_PERMALINK:-/%postname%/}
+      WP_TIMEZONE: ${WP_TIMEZONE:-Asia/Shanghai}
+    volumes:
+      - ${WORDPRESS_DATA_PATH:-./volumes/wordpress}:/var/www/html
+      - ./bootstrap:/scripts:ro
+      - ./mount/plugins:/wp-plugins:ro
+      - ./mount/themes:/wp-themes:ro
+    entrypoint: [ "bash", "/scripts/wp-init.sh" ]
+    restart: "no"
