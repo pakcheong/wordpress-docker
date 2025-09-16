@@ -114,6 +114,12 @@ fi
 if [ -d /wp-plugins ]; then
   for z in /wp-plugins/*.zip; do
     [ -e "$z" ] || continue
+    base="$(basename "$z")"
+    first_char="${base:0:1}"
+    if [ "$first_char" = "_" ]; then
+      log "Skipping plugin (starts with _): $base"
+      continue
+    fi
     log "Installing plugin from $z"
     wp plugin install "$z" --activate || true
   done
@@ -123,6 +129,12 @@ fi
 if [ -d /wp-themes ]; then
   for z in /wp-themes/*.zip; do
     [ -e "$z" ] || continue
+    base="$(basename "$z")"
+    first_char="${base:0:1}"
+    if [ "$first_char" = "_" ]; then
+      log "Skipping theme (starts with _): $base"
+      continue
+    fi
     log "Installing theme from $z"
     wp theme install "$z" --activate || true
   done

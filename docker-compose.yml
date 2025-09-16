@@ -1,7 +1,7 @@
 services:
   wordpress:
     image: wordpress:latest
-    container_name: ${WORDPRESS_CONTAINER_NAME:-wordpress-latest}
+    container_name: ${WORDPRESS_CONTAINER_NAME:-wordpress-site}
     restart: unless-stopped
     ports:
       - "${WORDPRESS_PORT:-8080}:80"
@@ -10,7 +10,6 @@ services:
       WORDPRESS_DB_USER: ${WORDPRESS_DB_USER:-wp_user}
       WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD:-wp_pass}
       WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME:-wordpress}
-      # 可选：直接在 wp-config.php 写入额外常量（无需手改文件）
       WORDPRESS_CONFIG_EXTRA: |
         define('FS_METHOD','direct');
         define('WP_MEMORY_LIMIT','256M');
@@ -24,8 +23,8 @@ services:
       - db
 
   db:
-    image: mysql:8.4
-    container_name: ${DB_CONTAINER_NAME:-mysql}
+    image: mysql:9.4.0
+    container_name: ${DB_CONTAINER_NAME:-wordpress-database}
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
@@ -39,7 +38,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
-
 
   wpcli:
     image: wordpress:cli
