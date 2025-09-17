@@ -1,71 +1,71 @@
 services:
-  wordpress:
-    image: wordpress:latest
-    container_name: ${WORDPRESS_CONTAINER_NAME:-wordpress-site}
+  wpsite:
+    image: wordpress:6.8.2-php8.4-apache
+    container_name: ${WPSITE_CONTAINER_NAME:-wordpress-site}
     restart: unless-stopped
     ports:
-      - "${WORDPRESS_PORT:-8080}:80"
+      - "${WPSITE_PORT:-8080}:80"
     environment:
-      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST:-db:3306}
-      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER:-wp_user}
-      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD:-wp_pass}
-      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME:-wordpress}
+      WORDPRESS_DB_HOST: ${WPDB_HOST:-db:3306}
+      WORDPRESS_DB_USER: ${WPDB_USER:-wp_user}
+      WORDPRESS_DB_PASSWORD: ${WPDB_PASSWORD:-wp_pass}
+      WORDPRESS_DB_NAME: ${WPDB_NAME:-wordpress}
       WORDPRESS_CONFIG_EXTRA: |
         define('FS_METHOD','direct');
         define('WP_MEMORY_LIMIT','256M');
         define('WP_MAX_MEMORY_LIMIT','256M');
         define('WP_DEBUG', false);
     volumes:
-      - ${WORDPRESS_DATA_PATH:-./volumes/wordpress}:/var/www/html
+      - ${WPSITE_VOLUME:-./volumes/wordpress}:/var/www/html
       - ./mount/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
       - ./mount/activationkey.php:/var/www/html/activationkey.php
     depends_on:
-      - db
+      - wpdb
 
-  db:
+  wpdb:
     image: mysql:9.4.0
-    container_name: ${DB_CONTAINER_NAME:-wordpress-database}
+    container_name: ${WPDB_CONTAINER_NAME:-wordpress-database}
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
-      MYSQL_DATABASE: ${WORDPRESS_DB_NAME:-wordpress}
-      MYSQL_USER: ${WORDPRESS_DB_USER:-wp_user}
-      MYSQL_PASSWORD: ${WORDPRESS_DB_PASSWORD:-wp_pass}
+      MYSQL_ROOT_PASSWORD: ${WPDB_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: ${WPDB_NAME:-wordpress}
+      MYSQL_USER: ${WPDB_USER:-wp_user}
+      MYSQL_PASSWORD: ${WPDB_PASSWORD:-wp_pass}
     volumes:
-      - ${DB_DATA_PATH:-./volumes/database}:/var/lib/mysql
+      - ${WPDB_VOLUME:-./volumes/database}:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${WPDB_ROOT_PASSWORD} --silent"]
       interval: 5s
       timeout: 3s
       retries: 20
 
   wpcli:
-    image: wordpress:cli
-    container_name: wpcli-onetime
+    image: wordpress:cli-2.6.0
+    container_name: ${WPCLI_CONTAINER_NAME:-wordpress-cli}
     depends_on:
-      - db
-      - wordpress
-    user: "0:0"
+      - wpdb
+      - wpsite
+    user: "0:0" # this is REQUIRED to install plugins and themes
     environment:
-      WP_CLI_ALLOW_ROOT: "1"
-      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST:-db:3306}
-      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER:-wp_user}
-      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD:-wp_pass}
-      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME:-wordpress}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      WP_CLI_ALLOW_ROOT: "1" # this is REQUIRED to install plugins and themes
+      WORDPRESS_DB_HOST: ${WPDB_HOST:-db:3306}
+      WORDPRESS_DB_USER: ${WPDB_USER:-wp_user}
+      WORDPRESS_DB_PASSWORD: ${WPDB_PASSWORD:-wp_pass}
+      WORDPRESS_DB_NAME: ${WPDB_NAME:-wordpress}
+      MYSQL_ROOT_PASSWORD: ${WPDB_ROOT_PASSWORD:-rootpass}
 
-      SITE_URL: ${SITE_URL:-http://localhost:8080}
-      SITE_TITLE: ${SITE_TITLE:-My Awesome Site}
-      WP_ADMIN_USER: ${WP_ADMIN_USER:-admin}
-      WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD:-changeme123}
-      WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL:-admin@example.com}
+      SITE_URL: ${WPCLI_SITE_URL:-http://localhost:8080}
+      SITE_TITLE: ${WPCLI_SITE_TITLE:-My Awesome Site}
+      WP_ADMIN_USER: ${WPCLI_ADMIN_USER:-admin}
+      WP_ADMIN_PASSWORD: ${WPCLI_ADMIN_PASSWORD:-changeme123}
+      WP_ADMIN_EMAIL: ${WPCLI_ADMIN_EMAIL:-admin@example.com}
 
-      WP_PLUGINS: ${WP_PLUGINS:-}
-      WP_LOCALE: ${WP_LOCALE:-zh_CN}
-      WP_PERMALINK: ${WP_PERMALINK:-/%postname%/}
-      WP_TIMEZONE: ${WP_TIMEZONE:-Asia/Shanghai}
+      WP_PLUGINS: ${WPCLI_PLUGINS:-}
+      WP_LOCALE: ${WPCLI_LOCALE:-zh_CN}
+      WP_PERMALINK: ${WPCLI_PERMALINK:-/%postname%/}
+      WP_TIMEZONE: ${WPCLI_TIMEZONE:-Asia/Shanghai}
     volumes:
-      - ${WORDPRESS_DATA_PATH:-./volumes/wordpress}:/var/www/html
+      - ${WPSITE_VOLUME:-./volumes/wordpress}:/var/www/html
       - ./bootstrap:/scripts:ro
       - ./mount/plugins:/wp-plugins:ro
       - ./mount/themes:/wp-themes:ro

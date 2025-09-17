@@ -30,9 +30,9 @@ docker compose up -d
 ```
 
 This will start:
-- **WordPress** (latest)
-- **MySQL 8.4**
-- **WP-CLI one-time container** (`wpcli`) which runs `bootstrap/wp-init.sh`.
+- **WordPress 6.8.2-php8.4-apache**
+- **MySQL 9.4.0**
+- **WP-CLI 2.6.0 one-time container** (`wpcli`) which runs `bootstrap/wp-init.sh`.
 
 ### 2. Restart workflow
 Use the helper script:
@@ -72,7 +72,7 @@ WP_TIMEZONE=Asia/Shanghai
 
 ## 🛠 Troubleshooting
 
-- If you see `Could not create directory` errors, ensure the mounted `volumes/` directory is writable.  
+- If you see `Could not create directory` errors, ensure the mounted `volumes/` directory is writable.
 - To verify mounted ZIPs inside `wpcli`:
   ```bash
   docker compose exec wpcli ls -l /wp-plugins

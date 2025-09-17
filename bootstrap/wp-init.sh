@@ -140,6 +140,9 @@ if [ -d /wp-themes ]; then
   done
 fi
 
+# for some unknown reason, repairing is needed before updating following
+# wp db repair
+
 # --- Sync site URLs (useful behind reverse proxy) ---
 if [ -n "${SITE_URL:-}" ]; then
   log "Ensuring home/siteurl = ${SITE_URL}"
